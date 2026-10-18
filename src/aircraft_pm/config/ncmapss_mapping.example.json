@@ -1,0 +1,12 @@
+{
+  "datasets": {
+    "/train/table": {
+      "columns": ["unit_id", "cycle", "sensor_1", "sensor_2", "sensor_3", "rul"],
+      "engine_id_column": "unit_id"
+    },
+    "/test/table": {
+      "columns": ["unit_id", "cycle", "sensor_1", "sensor_2", "sensor_3"],
+      "engine_id_column": "unit_id"
+    }
+  }
+}
