@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,spark]"
+      - name: Lint
+        run: ruff check src tests
+      - name: Tests
+        run: pytest -q
+
+  lightweight-integration:
+    runs-on: ubuntu-22.04
+    needs: lint-and-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Converter smoke test
+        run: |
+          python - <<'PY'
+          import tempfile
+          from pathlib import Path
+          import h5py
+          from aircraft_pm.converter import convert_hdf5_to_parquet
+          with tempfile.TemporaryDirectory() as td:
+              inp = Path(td)/"in"
+              out = Path(td)/"out"
+              inp.mkdir()
+              with h5py.File(inp/"x.h5", "w") as f:
+                  f.create_dataset("tbl", data=[[1,2,3]])
+              convert_hdf5_to_parquet(str(inp), str(out), str(Path(td)/"q.jsonl"), chunk_size=1)
+              assert list(out.rglob("*.parquet"))
+          PY
